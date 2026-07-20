@@ -32,12 +32,37 @@ sugeridor/
 pip install streamlit pandas numpy openpyxl
 ```
 
-## Ejecución
+## Ejecución (local, Streamlit — sigue funcionando como respaldo)
 
 ```bash
 cd sugeridor
 streamlit run app.py
 ```
+
+## API (`api.py`) — usada por degasa-portal en vez de Streamlit
+
+Envuelve exactamente la misma lógica y el mismo orden de fases que `app.py`,
+sin tocarla. Corre como proceso siempre-vivo (no serverless — pandas +
+archivos de 800k+ filas no caben en límites de función serverless).
+
+```bash
+pip install -r requirements.txt
+cp .env.example .env   # completa SUPABASE_URL / SUPABASE_ANON_KEY reales
+uvicorn api:app --reload --port 8000   # requiere python-dotenv o exportar las vars a mano
+```
+
+Despliegue: Railway o Render (deploy directo del repo, usa el `Procfile`
+incluido). Variables de entorno: ver `.env.example`.
+
+Endpoints:
+- `POST /reportes` — multipart: `pedidos`, `inventario`, `externas` (requeridos),
+  `facturacion` (opcional según flags), `fuentes_activas` (CSV),
+  `gen_todas`/`gen_resumen`/`gen_reporte_consumo`/`gen_resumen_fac`/`gen_sug_consumo`
+  (booleanos). Requiere `Authorization: Bearer <access_token de Supabase>`.
+  Devuelve `{job_id}`.
+- `GET /reportes/{job_id}` — estado/progreso del job.
+- `GET /reportes/{job_id}/archivo` — descarga el xlsx de hasta 7 hojas cuando
+  `status == "listo"`.
 
 ## Ejecutar tests
 

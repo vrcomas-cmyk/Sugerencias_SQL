@@ -1,0 +1,13 @@
+# Secretos reales — nunca subir. .env.example es la plantilla pública.
+.env
+.env.local
+
+__pycache__/
+*.pyc
+
+# Log de uvicorn corriendo local, no es código.
+uvicorn.log
+api_log.txt
+
+.venv/
+venv/

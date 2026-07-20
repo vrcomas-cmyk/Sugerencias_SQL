@@ -1,6 +1,14 @@
 streamlit==1.51.0
 pyarrow==21.0.0
 
+# api.py — reemplaza la UI de Streamlit para degasa-portal (fase de migración)
+fastapi>=0.115
+uvicorn[standard]>=0.30
+python-multipart>=0.0.9
+httpx>=0.27
+python-dotenv>=1.0
+boto3>=1.34   # r2_client.py — Facturación acumulada en Cloudflare R2
+
 
 pandas==2.3.3
 numpy==2.2.6
