@@ -11,3 +11,7 @@ api_log.txt
 
 .venv/
 venv/
+
+# Artefactos de PyInstaller — el .exe se distribuye vía GitHub Releases, no en git.
+build/
+dist/

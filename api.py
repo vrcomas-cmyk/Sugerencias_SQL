@@ -17,11 +17,13 @@ exactamente lo que hace cualquier backend que delega auth a Supabase.
 import io
 import logging
 import os
+import sys
 import threading
 import time
 import uuid
 import warnings
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
 from typing import Optional
 
 import httpx
@@ -29,10 +31,22 @@ import pandas as pd
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Header, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-
-load_dotenv()  # lee .env si existe (local); en Railway/Render las env vars ya vienen del panel, esto no las pisa.
 from fastapi.responses import Response
 from pydantic import BaseModel
+
+# .env junto al .exe cuando corre empaquetado (PyInstaller onefile), o junto
+# a este archivo cuando corre como script — nunca el cwd del usuario, que
+# puede ser cualquier carpeta si le dio doble clic desde el Explorador.
+_base_dir = Path(sys.executable).parent if getattr(sys, "frozen", False) else Path(__file__).parent
+load_dotenv(_base_dir / ".env")
+_REQUIRED_ENV = ["SUPABASE_URL", "SUPABASE_ANON_KEY", "R2_ENDPOINT", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "R2_BUCKET"]
+_faltantes = [v for v in _REQUIRED_ENV if not os.environ.get(v)]
+if _faltantes:
+    sys.exit(
+        f'Falta configurar: {", ".join(_faltantes)}.\n'
+        f'Copia .env.example a ".env", complétalo con tus credenciales reales, '
+        f'y déjalo junto a este ejecutable en: {_base_dir}'
+    )
 
 pd.options.mode.chained_assignment = None
 warnings.filterwarnings("ignore", category=UserWarning, message="Parsing dates in.*%d/%m/%Y.*")
