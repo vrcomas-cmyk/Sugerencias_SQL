@@ -34,6 +34,22 @@ _client = boto3.client(
 FACTURACION_KEY = "facturacion/acumulada.parquet"
 
 
+def _sanitize_object_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Parquet (via pyarrow) exige un tipo consistente por columna. Un xlsx de
+    SAP mezcla texto y números en la misma columna "object" de pandas cuando
+    algunas celdas quedaron con formato numérico (p.ej. un "Texto Material"
+    que a veces es puro dígito) — pyarrow truena con un error críptico
+    ("Expected bytes, got a 'int' object") en vez de forzar texto. Toda
+    columna "object" de Facturación es en realidad texto (Solicitante, Razón
+    Social, Material, Texto Material, Factura, Gpo. Vdor., Grp. Cliente), así
+    que forzar str() aquí es seguro y no pierde información real."""
+    df = df.copy()
+    for col in df.columns:
+        if df[col].dtype == object:
+            df[col] = df[col].apply(lambda v: None if pd.isna(v) else str(v))
+    return df
+
+
 def leer_facturacion_acumulada() -> pd.DataFrame:
     """Lee lo acumulado en R2. Si no existe todavía, regresa un DataFrame vacío."""
     try:
@@ -47,7 +63,7 @@ def leer_facturacion_acumulada() -> pd.DataFrame:
 
 def guardar_facturacion_acumulada(df: pd.DataFrame) -> None:
     buf = io.BytesIO()
-    df.to_parquet(buf, index=False)
+    _sanitize_object_columns(df).to_parquet(buf, index=False)
     buf.seek(0)
     _client.put_object(Bucket=R2_BUCKET, Key=FACTURACION_KEY, Body=buf.getvalue())
 
